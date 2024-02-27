@@ -1,0 +1,43 @@
+version: "3.5"
+
+services:
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test2024
+      POSTGRES_DB: dbAuthRemote
+    ports:
+      - "5240:5432"
+    networks:
+      - bookmanagement
+    volumes:
+      - db:/var/lib/postgresql/data
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+    
+  authremote-api:
+    build: .
+    restart: always
+    container_name: authremote-api
+    ports:
+      - 8080:3000
+    depends_on:
+      - db
+    environment:
+      - PORT=8080
+      - JWT_SECERTS=adminjwtsecret
+      - DATABASE_URL=postgresql://postgres:test2024@host.docker.internal:5240/dbAuthRemote?schema=public
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+    networks:
+      - bookmanagement
+
+networks:
+  bookmanagement:
+    driver: bridge
+
+volumes:
+  db:
+    driver: local

@@ -2,6 +2,7 @@
   "name": "@bun-examples/elysia",
   "version": "1.0.50",
   "scripts": {
+    "prisma-migrate-dev": "docker exec myApp bunx prisma migrate dev",
     "dev": "bun run --watch src/index.ts",
     "build": "bun build src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
@@ -9,8 +10,11 @@
   },
   "dependencies": {
     "@elysiajs/cookie": "^0.8.0",
+    "@elysiajs/cors": "^0.8.0",
     "@elysiajs/jwt": "^0.8.0",
     "@elysiajs/swagger": "^0.8.5",
+    "@prisma/client": "5.10.2",
+    "bcrypt": "^5.1.1",
     "elysia": "^0.8.17"
   },
   "devDependencies": {

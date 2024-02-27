@@ -1,7 +1,9 @@
 import cookie from "@elysiajs/cookie";
+import cors from "@elysiajs/cors";
 import jwt from "@elysiajs/jwt";
 import swagger from "@elysiajs/swagger";
-import { Elysia, error } from "elysia";
+import { Elysia } from "elysia";
+import { APIRoute } from "./routes";
 
 class Unauthorized extends Error {
   constructor() {
@@ -10,17 +12,14 @@ class Unauthorized extends Error {
 }
 
 const app = new Elysia()
+  .use(cors())
   .use(cookie())
   .use(jwt({
     name: "jwt",
     secret: process.env.JWT_SECERTS!,
 
   }))
-  .use(swagger());
-
-app.get("/", () => "Hello Elysia");
-
-app
+  .use(swagger())
   .onError(({ code, error }) => {
     let status = {
       "VALIDATION": 400,
@@ -33,6 +32,7 @@ app
 
     return new Response(error.toString(), { status })
   })
+  .use(APIRoute)
   .listen(3000);
 
 console.log(
