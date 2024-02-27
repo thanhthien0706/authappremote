@@ -60,7 +60,8 @@ const signUp = async ({ body, set, jwt, cookie: { auth }, setCookie }: any) => {
     const inforUser = await db.user.update(
         {
             data: {
-                refreshToken: hashRereshToken.hash
+                refreshToken: hashRereshToken.hash,
+                saltToken: hashRereshToken.salt
             },
             where: {
                 id: newUser.id
@@ -136,7 +137,8 @@ const signIn = async ({ body, set, jwt, cookie: { auth }, setCookie }: any) => {
     const inforUser = await db.user.update(
         {
             data: {
-                refreshToken: hashRereshToken.hash
+                refreshToken: hashRereshToken.hash,
+                saltToken: hashRereshToken.salt
             },
             where: {
                 id: userInfor.id
@@ -154,6 +156,85 @@ const signIn = async ({ body, set, jwt, cookie: { auth }, setCookie }: any) => {
         user: { ...inforUser }
     }
 
+}
+
+const refreshToken = async ({ body, set, jwt, cookie: { auth }, setCookie }: any) => {
+    const { userId, refreshToken } = body;
+
+    const inforUser = await db.user.findUnique({
+        where: {
+            id: userId,
+        }
+        ,
+        select: {
+            refreshToken: true,
+            saltToken: true,
+            email: true,
+            id: true,
+        }
+    });
+
+    if (!inforUser || !inforUser.refreshToken || !inforUser.saltToken) {
+        set.status = 400
+        return {
+            success: false,
+            data: null,
+            message: "User not found",
+        };
+    };
+
+    const compareToken = comparePassword(refreshToken, inforUser.saltToken, inforUser.refreshToken)
+
+    if (!compareToken) {
+        set.status = 401
+        return {
+            success: false,
+            data: null,
+            message: "Unauthorized",
+        };
+    }
+
+    const [accessToken, refreshTokenD] = await Promise.all([
+        jwt.sign({
+            email: inforUser.email,
+            userId: inforUser.id,
+            exp: 15 * 60
+        }),
+        jwt.sign({
+            email: inforUser.email,
+            userId: inforUser.id,
+            exp: 60 * 60 * 12 * 7
+        })
+    ])
+
+    setCookie("access_token", accessToken, {
+        maxAge: 15 * 60, // 15 minutes
+        path: "/",
+    });
+
+    const hashRereshToken = await hashPassword(refreshTokenD)
+
+    const userUpdate = await db.user.update(
+        {
+            data: {
+                refreshToken: hashRereshToken.hash,
+                saltToken: hashRereshToken.salt
+            },
+            where: {
+                id: userId
+            },
+            select: {
+                email: true,
+                username: true
+            }
+        }
+    )
+
+    return {
+        accessToken,
+        refreshTokenD,
+        user: { ...userUpdate }
+    }
 }
 
 const logOut = async ({ body, set, jwt, cookie: { access_token }, setCookie, }: any) => {
@@ -220,4 +301,4 @@ const getMe = async ({ body, set, jwt, cookie: { access_token }, setCookie, }: a
     };
 }
 
-export { signUp, signIn, logOut, getMe }
+export { signUp, signIn, logOut, getMe, refreshToken }

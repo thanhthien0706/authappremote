@@ -17,6 +17,7 @@ model User {
   id           Int     @id @default(autoincrement())
   username     String  @unique
   salt         String
+  saltToken    String?
   password     String
   email        String  @unique
   refreshToken String?

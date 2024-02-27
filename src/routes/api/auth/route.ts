@@ -4,7 +4,7 @@ import { isAuthenticated } from "../../../middlewares/auth";
 import { db } from "../../../data/dbConnection";
 import { comparePassword, hashPassword } from "../../../utils/bcrypt";
 import jwt from "@elysiajs/jwt";
-import { getMe, logOut, signIn, signUp } from "../../../controller/auth";
+import { getMe, logOut, refreshToken, signIn, signUp } from "../../../controller/auth";
 
 const AuthRoute = CreateElysia({ prefix: "/v1", })
     .post("/sign-up", signUp, {
@@ -18,6 +18,12 @@ const AuthRoute = CreateElysia({ prefix: "/v1", })
         body: t.Object({
             email: t.String(),
             password: t.String(),
+        })
+    })
+    .post("refresh-token", refreshToken, {
+        body: t.Object({
+            userId: t.Number(),
+            refreshToken: t.String()
         })
     })
     .post("/logout", logOut, {
